@@ -1,7 +1,7 @@
 #!/bin/bash
 # 运行目录：openwrt 源码根目录，.config 拷入之后、make defconfig 之前执行
 # 职责：准备 files/ 覆盖层——首启扩容脚本 + OpenClash 离线内核与数据库
-set -euo pipefail
+set -euxo pipefail
 
 mkdir -p files/etc/uci-defaults files/etc/openclash/core
 
@@ -16,7 +16,14 @@ cat >> files/etc/sysupgrade.conf <<'EOF'
 EOF
 
 # mihomo 内核（OpenClash Meta 内核，预置避免首次启动联网下载）
-CORE_VER=$(curl -sL https://api.github.com/repos/MetaCubeX/mihomo/releases/latest | grep -oP '"tag_name": "\K[^"]+')
+# 带 token 认证，匿名调 GitHub API 在 Actions runner 上经常被限流
+AUTH=()
+[ -n "${GITHUB_TOKEN:-}" ] && AUTH=(-H "Authorization: Bearer $GITHUB_TOKEN")
+CORE_VER=$(curl -sL "${AUTH[@]}" https://api.github.com/repos/MetaCubeX/mihomo/releases/latest | grep -oP '"tag_name": "\K[^"]+' || true)
+if [ -z "$CORE_VER" ]; then
+  echo "ERROR: 获取 mihomo 最新版本失败（GitHub API 限流或网络问题）" >&2
+  exit 1
+fi
 echo "mihomo version: $CORE_VER"
 curl -sfL "https://github.com/MetaCubeX/mihomo/releases/download/${CORE_VER}/mihomo-linux-amd64-${CORE_VER}.gz" \
   | gunzip > files/etc/openclash/core/clash_meta

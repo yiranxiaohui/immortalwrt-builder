@@ -53,6 +53,8 @@ jobs:
         run: cd openwrt && ./scripts/feeds update -a && ./scripts/feeds install -a
 
       - name: Load config and DIY part 2 (files overlay)
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
         run: |
           cp config/x86_64.config openwrt/.config
           chmod +x scripts/diy-part2.sh
