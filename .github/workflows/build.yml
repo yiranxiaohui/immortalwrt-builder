@@ -15,7 +15,7 @@ permissions:
 
 env:
   REPO_URL: https://github.com/immortalwrt/immortalwrt
-  REPO_BRANCH: openwrt-24.10
+  REPO_BRANCH: openwrt-25.12
   TZ: Asia/Shanghai
 
 jobs:
@@ -56,8 +56,9 @@ jobs:
         run: |
           cp config/x86_64.config openwrt/.config
           chmod +x scripts/diy-part2.sh
-          cd openwrt && $GITHUB_WORKSPACE/scripts/diy-part2.sh
-          cd openwrt && make defconfig
+          cd openwrt
+          $GITHUB_WORKSPACE/scripts/diy-part2.sh
+          make defconfig
 
       - name: Download sources
         run: |

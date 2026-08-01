@@ -15,7 +15,7 @@
 
 四类文件，全部声明式，改动即触发重编：
 
-1. `.github/workflows/build.yml` — 流水线：腾磁盘 → 装依赖 → 浅克隆 openwrt-24.10 → diy-part1（克隆 OpenClash）→ feeds → 拷 config + diy-part2（files 覆盖层）→ defconfig → download → make → Release（tag=日期时间）
+1. `.github/workflows/build.yml` — 流水线：腾磁盘 → 装依赖 → 浅克隆 openwrt-25.12 → diy-part1（克隆 OpenClash）→ feeds → 拷 config + diy-part2（files 覆盖层）→ defconfig → download → make → Release（tag=日期时间）
 2. `config/x86_64.config` — 种子配置，defconfig 补全依赖
 3. `scripts/diy-part{1,2}.sh` — 源码期钩子；part2 同时预下载 mihomo 内核与 GeoIP/GeoSite 数据进 `/etc/openclash`，使 OpenClash 离线可用
 4. `files/etc/uci-defaults/{70-rootpt-resize,80-rootfs-resize}` — OpenWrt 官方 wiki 的两阶段首启扩容（parted 扩分区 → 重启 → resize2fs 扩文件系统 → 重启），标记文件写入 sysupgrade.conf 防止升级后重跑
