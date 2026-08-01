@@ -1,0 +1,12 @@
+# 首次开机第一阶段：把 root 分区扩展到整块磁盘（OpenWrt 官方 wiki 方案）
+# exit 1 让脚本保留在 uci-defaults 中，靠标记文件保证只执行一次
+if [ ! -e /etc/rootpt-resize ]; then
+	ROOT_BLK="$(readlink -f /sys/dev/block/"$(awk '$5=="/" {print $3}' /proc/self/mountinfo | head -n1)")"
+	ROOT_DISK="/dev/$(basename "${ROOT_BLK%/*}")"
+	ROOT_PART="${ROOT_BLK##*[^0-9]}"
+	parted -f -s "${ROOT_DISK}" resizepart "${ROOT_PART}" 100%
+	mount_root done
+	touch /etc/rootpt-resize
+	reboot
+fi
+exit 1
