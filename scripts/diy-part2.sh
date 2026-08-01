@@ -3,6 +3,9 @@
 # 职责：准备 files/ 覆盖层——首启扩容脚本 + OpenClash 离线内核与数据库
 set -euxo pipefail
 
+# 删除 feed 自带的 mosdns，避免与 sbwml 版（package/mosdns）版本冲突
+rm -rf feeds/packages/net/mosdns feeds/packages/net/msd_lite
+
 mkdir -p files/etc/uci-defaults files/etc/openclash/core
 
 # 首启自动扩容脚本（来自仓库 files/）
