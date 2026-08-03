@@ -4,6 +4,8 @@ on:
   workflow_dispatch:
   push:
     branches: [main]
+    tags: ['v*']
+    # paths 过滤只作用于分支推送，tag 推送不做 paths 评估、必定触发
     paths:
       - 'config/**'
       - 'scripts/**'
@@ -77,7 +79,12 @@ jobs:
       - name: Collect firmware
         id: firmware
         run: |
-          echo "tag=$(date +%Y.%m.%d-%H%M)" >> "$GITHUB_OUTPUT"
+          # tag 推送（v* 触发）直接沿用该 tag 发 release；手动/分支推送用日期 tag
+          if [[ "$GITHUB_REF" == refs/tags/* ]]; then
+            echo "tag=${GITHUB_REF#refs/tags/}" >> "$GITHUB_OUTPUT"
+          else
+            echo "tag=$(date +%Y.%m.%d-%H%M)" >> "$GITHUB_OUTPUT"
+          fi
           cd openwrt/bin/targets/x86/64
           ls -lh
           echo "version=$(grep -oP "DISTRIB_RELEASE='\K[^']+" ../../../../package/base-files/files/etc/openwrt_release || true)" >> "$GITHUB_OUTPUT"
