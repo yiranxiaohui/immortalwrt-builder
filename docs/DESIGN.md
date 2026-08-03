@@ -7,7 +7,7 @@
 ## 需求（已确认）
 
 - 预装 OpenClash（官方 feed 无，需克隆 vernesong/OpenClash）
-- 通用固件（不绑定现网关），默认 LAN IP 192.168.1.1
+- 通用固件（不绑定现网关），默认 LAN IP 192.168.0.1
 - PVE 虚拟机适配：磁盘分多大就用多大 → 首启自动扩容；预装 qemu-ga
 - ext4 + EFI 镜像，kernel 32M + rootfs 1024M（基础值，扩容后无所谓）
 

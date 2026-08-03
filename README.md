@@ -9,7 +9,7 @@ ImmortalWrt x86/64 云编译（GitHub Actions），面向 PVE 虚拟机 / 通用
 - **首次开机自动把 rootfs 扩容到整块磁盘**（PVE 分多大盘就用多大，过程中自动重启两次）
 - 预装 OpenClash（内置 mihomo 内核 + GeoIP/GeoSite/Country.mmdb，离线可用）
 - 预装 qemu-ga（PVE 面板可见 IP / 干净关机）、LuCI 中文、ttyd、htop、parted
-- 默认 LAN IP `192.168.1.1`
+- 默认 LAN IP `192.168.0.1`
 
 ## 用法
 

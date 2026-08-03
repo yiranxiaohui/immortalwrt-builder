@@ -92,7 +92,7 @@ jobs:
             - ext4 + EFI/BIOS combined 镜像，kernel 32M + rootfs 1024M
             - 首次开机自动扩容 rootfs 至整盘（扩容过程会自动重启两次）
             - 预装 OpenClash（内置 mihomo 内核与 GeoIP/GeoSite 数据）、qemu-ga
-            - 默认 LAN IP 192.168.1.1
+            - 默认 LAN IP 192.168.0.1
           files: |
             openwrt/bin/targets/x86/64/*combined*.img.gz
             openwrt/bin/targets/x86/64/*.buildinfo

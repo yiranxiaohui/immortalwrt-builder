@@ -1,0 +1,4 @@
+# 默认 LuCI 主题设为 argon（固件同时含 bootstrap，不显式指定则默认主题取决于包安装顺序）
+uci set luci.main.mediaurlbase='/luci-static/argon'
+uci commit luci
+exit 0

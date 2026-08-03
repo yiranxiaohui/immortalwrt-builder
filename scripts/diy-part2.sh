@@ -6,6 +6,9 @@ set -euxo pipefail
 # 删除 feed 自带的 mosdns，避免与 sbwml 版（package/mosdns）版本冲突
 rm -rf feeds/packages/net/mosdns feeds/packages/net/msd_lite
 
+# 默认 LAN IP 改为 192.168.0.1（写入固件默认值，恢复出厂后依然生效）
+sed -i 's/192\.168\.1\.1/192.168.0.1/g' package/base-files/files/bin/config_generate
+
 mkdir -p files/etc/uci-defaults files/etc/openclash/core
 
 # 首启自动扩容脚本（来自仓库 files/）
