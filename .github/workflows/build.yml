@@ -17,7 +17,8 @@ permissions:
 
 env:
   REPO_URL: https://github.com/immortalwrt/immortalwrt
-  REPO_BRANCH: openwrt-25.12
+  # 锁定上游正式版 tag（feeds 也随 tag 锁定到对应 commit）；升级时改这里
+  REPO_BRANCH: v25.12.2
   TZ: Asia/Shanghai
 
 jobs:

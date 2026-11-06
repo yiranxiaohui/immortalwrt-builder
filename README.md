@@ -4,7 +4,7 @@ ImmortalWrt x86/64 云编译（GitHub Actions），面向 PVE 虚拟机 / 通用
 
 ## 固件特性
 
-- 基于 `immortalwrt/immortalwrt` 分支 `openwrt-25.12`，target `x86/64`
+- 基于 `immortalwrt/immortalwrt` 正式版 `v25.12.2`（tag 锁定，feeds 同步锁定），target `x86/64`
 - ext4 + EFI/BIOS combined 镜像，kernel 32M + rootfs 1024M
 - **首次开机自动把 rootfs 扩容到整块磁盘**（PVE 分多大盘就用多大，过程中自动重启两次）
 - 预装 OpenClash（内置 mihomo 内核 + GeoIP/GeoSite/Country.mmdb，离线可用）
@@ -31,4 +31,4 @@ ImmortalWrt x86/64 云编译（GitHub Actions），面向 PVE 虚拟机 / 通用
 | 增删软件包 | `config/x86_64.config` |
 | 加第三方插件源码 | `scripts/diy-part1.sh` |
 | 预置文件 / 默认配置 | `files/`（原样进 rootfs）+ `scripts/diy-part2.sh` |
-| 换分支 / 源 | `.github/workflows/build.yml` 顶部 env |
+| 升级版本 / 换分支 / 源 | `.github/workflows/build.yml` 顶部 env（`REPO_BRANCH` 可填 tag 或分支） |
