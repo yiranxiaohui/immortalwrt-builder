@@ -10,6 +10,7 @@ on:
       - 'config/**'
       - 'scripts/**'
       - 'files/**'
+      - 'tests/**'
       - '.github/workflows/build.yml'
 
 permissions:
@@ -22,7 +23,19 @@ env:
   TZ: Asia/Shanghai
 
 jobs:
+  validate:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+      - name: Validate DNS defaults and integration
+        run: |
+          bash -n scripts/diy-part1.sh scripts/diy-part2.sh tests/test-adguardhome.sh
+          sh -n files/etc/uci-defaults/99-adguardhome-openclash
+          shellcheck files/etc/uci-defaults/99-adguardhome-openclash tests/test-adguardhome.sh
+          bash tests/test-adguardhome.sh
+
   build:
+    needs: validate
     runs-on: ubuntu-24.04
     steps:
       - name: Checkout
@@ -64,6 +77,13 @@ jobs:
           cd openwrt
           $GITHUB_WORKSPACE/scripts/diy-part2.sh
           make defconfig
+          # 防止 feed 升级或依赖变化导致软件包被 defconfig 静默取消。
+          for package in adguardhome luci-app-adguardhome luci-app-openclash dnsmasq-full ruby ruby-yaml; do
+            grep -qx "CONFIG_PACKAGE_${package}=y" .config || {
+              echo "ERROR: required package missing: $package" >&2
+              exit 1
+            }
+          done
 
       - name: Download sources
         run: |
@@ -99,9 +119,13 @@ jobs:
             ImmortalWrt ${{ env.REPO_BRANCH }} x86/64 自动编译
             - ext4 + EFI/BIOS combined 镜像，kernel 32M + rootfs 1024M
             - 首次开机自动扩容 rootfs 至整盘（扩容过程会自动重启两次）
-            - 预装 OpenClash（内置 mihomo 内核与 GeoIP/GeoSite 数据）、qemu-ga
+            - 预装 OpenClash（内置 mihomo 内核与 GeoIP/GeoSite 数据）、AdGuard Home + LuCI、qemu-ga
+            - 新刷机自动配置 AdGuard Home :53 → OpenClash :7874；dnsmasq :54 提供局域网解析和故障备用
+            - AdGuard 管理界面 http://192.168.0.1:3000；首启随机密码见路由器 /etc/adguardhome-admin.txt（仅 root 可读）
+            - OpenClash 需自行导入订阅并启用；保留已有自定义 DNS 配置的升级不会自动接管，详见 README
             - 默认 LAN IP 192.168.0.1
           files: |
             openwrt/bin/targets/x86/64/*combined*.img.gz
             openwrt/bin/targets/x86/64/*.buildinfo
+            openwrt/bin/targets/x86/64/*.manifest
             openwrt/bin/targets/x86/64/sha256sums

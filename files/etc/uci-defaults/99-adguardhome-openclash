@@ -1,0 +1,90 @@
+#!/bin/sh
+# 新刷机默认链路：客户端 -> AdGuard Home :53 -> OpenClash :7874。
+# dnsmasq :54 保留 DHCP、局域网域名及故障备用 DNS；不转发回 AdGuard。
+# uci-defaults 在 rootfs 构建期也会运行，凭据只能在设备首次开机生成。
+[ -n "${IPKG_INSTROOT:-}" ] && exit 1
+
+set -eu
+umask 077
+
+marker=/etc/adguardhome-builder.initialized
+pending=/etc/adguardhome-builder.pending
+config=/etc/adguardhome/adguardhome.yaml
+credentials=/etc/adguardhome-admin.txt
+
+[ -e "$marker" ] && exit 0
+
+# 保留 sysupgrade 恢复的用户配置（包括旧版/自定义配置路径），不自动接管。
+existing_config=$(uci -q get adguardhome.config.config_file || true)
+legacy_config=$(uci -q get adguardhome.config.config || true)
+if [ ! -e "$pending" ] && {
+   [ -e "$config" ] || [ -e /etc/adguardhome.yaml ] ||
+   { [ -n "$existing_config" ] && [ -e "$existing_config" ]; } ||
+   { [ -n "$legacy_config" ] && [ -e "$legacy_config" ]; }; }; then
+    logger -t adguardhome-builder 'Existing AdGuard Home configuration found; leaving DNS settings unchanged.'
+    exit 0
+fi
+
+# 保留已有 OpenClash/DNS 自定义配置，防止首次使用新版固件时改坏现网。
+if [ ! -e "$pending" ] && {
+   [ "$(uci -q get openclash.config.enable || true)" = 1 ] ||
+   [ -n "$(uci -q get dhcp.@dnsmasq[0].server || true)" ] ||
+   [ -n "$(uci -q get dhcp.lan.dhcp_option || true)" ] ||
+   [ -n "$(uci -q get dhcp.lan.dns || true)" ]; }; then
+    logger -t adguardhome-builder 'Custom DNS/OpenClash settings found; automatic setup skipped. See README.'
+    exit 0
+fi
+port=$(uci -q get dhcp.@dnsmasq[0].port || true)
+if [ ! -e "$pending" ] && [ -n "$port" ] && [ "$port" != 53 ]; then
+    logger -t adguardhome-builder 'Custom dnsmasq port found; automatic setup skipped. See README.'
+    exit 0
+fi
+
+# 扩容会触发重启；若中途被打断，下次启动继续完成，不把自己生成的配置误判为用户配置。
+touch "$pending"
+mkdir -p /etc/adguardhome /etc/adguardhome/data
+if [ ! -e "$config" ]; then
+    ruby /usr/share/adguardhome-builder/initialize.rb \
+        /usr/share/adguardhome-builder/adguardhome.yaml "$config" "$credentials"
+fi
+
+# 先校验，再改 DNS 端口；失败时保留原有的 dnsmasq :53。
+if ! /usr/bin/AdGuardHome --check-config --config "$config" --work-dir /etc/adguardhome/data; then
+    rm -f "$config" "$credentials"
+    exit 1
+fi
+
+uci set adguardhome.config.enabled='1'
+uci set adguardhome.config.config_file="$config"
+uci set adguardhome.config.work_dir='/etc/adguardhome/data'
+
+uci set dhcp.@dnsmasq[0].port='54'
+uci set dhcp.@dnsmasq[0].dns_redirect='0'
+uci set dhcp.@dnsmasq[0].noresolv='1'
+uci set dhcp.@dnsmasq[0].localuse='1'
+uci -q delete dhcp.@dnsmasq[0].server || true
+uci add_list dhcp.@dnsmasq[0].server='223.5.5.5'
+uci add_list dhcp.@dnsmasq[0].server='119.29.29.29'
+# 0.0.0.0 由 dnsmasq 替换为当前接口地址；LAN 改 IP 后也不需改此项。
+uci -q delete dhcp.lan.dhcp_option || true
+uci add_list dhcp.lan.dhcp_option='6,0.0.0.0'
+# odhcpd 通过 RA/DHCPv6 宣告路由器自身，IPv6 查询同样进入 AdGuard :53。
+uci set dhcp.lan.dns_service='1'
+
+# 禁止 OpenClash 劫持到 dnsmasq/自身，也禁止写回 dnsmasq 上游造成回环。
+uci set openclash.config.enable_redirect_dns='0'
+uci set openclash.config.dns_port='7874'
+uci set openclash.config.enable_custom_dns='1'
+uci set openclash.config.append_wan_dns='0'
+uci set openclash.config.append_default_dns='0'
+# 仍需用户导入订阅并手动启用，未启用时由 AdGuard 的备用上游处理。
+uci commit adguardhome
+uci commit dhcp
+uci commit openclash
+
+/etc/init.d/adguardhome enable
+# 首启的 boot 流程随后会启动服务；不要在 uci-defaults 中与网络初始化抢跑。
+touch "$marker"
+rm -f "$pending"
+logger -t adguardhome-builder 'AdGuard Home DNS chain initialized; web UI :3000, credentials: /etc/adguardhome-admin.txt (root only).'
+exit 0

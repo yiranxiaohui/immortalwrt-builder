@@ -1,0 +1,50 @@
+# 首启模板；运行配置在 /etc/adguardhome/adguardhome.yaml，用户和密码在首启生成。
+# schema_version 对应 ImmortalWrt v25.12.2 锁定的 AdGuard Home v0.107.78。
+http:
+  address: 0.0.0.0:3000
+  session_ttl: 24h
+users: []
+dns:
+  bind_hosts:
+    - 0.0.0.0
+    - '::'
+  port: 53
+  upstream_dns:
+    - 127.0.0.1:7874
+    - '[/lan/]127.0.0.1:54'
+  # 仅当 OpenClash 查询失败时启用，不与主上游并发竞争。
+  fallback_dns:
+    - 127.0.0.1:54
+  bootstrap_dns:
+    - 223.5.5.5
+    - 119.29.29.29
+  upstream_timeout: 2s
+  use_private_ptr_resolvers: true
+  local_ptr_upstreams:
+    - 127.0.0.1:54
+  # 缓存交给 OpenClash，避免它重启后 AGH 仍返回旧 Fake-IP。
+  cache_enabled: false
+  cache_optimistic: false
+  enable_dnssec: false
+  aaaa_disabled: false
+  use_dns64: false
+  serve_plain_dns: true
+querylog:
+  enabled: true
+  file_enabled: true
+  interval: 24h
+statistics:
+  enabled: true
+  interval: 24h
+filtering:
+  protection_enabled: true
+  filtering_enabled: true
+  filters_update_interval: 24
+filters:
+  - enabled: true
+    url: https://adguardteam.github.io/HostlistsRegistry/assets/filter_1.txt
+    name: AdGuard DNS filter
+    id: 1
+dhcp:
+  enabled: false
+schema_version: 34

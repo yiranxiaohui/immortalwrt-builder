@@ -1,6 +1,6 @@
 #!/bin/bash
 # 运行目录：openwrt 源码根目录，.config 拷入之后、make defconfig 之前执行
-# 职责：准备 files/ 覆盖层——首启扩容脚本 + OpenClash 离线内核与数据库
+# 职责：准备 files/ 覆盖层——首启扩容、AdGuard DNS 链路、OpenClash 离线内核与数据库
 set -euxo pipefail
 
 # 默认 LAN IP 改为 192.168.0.1（写入固件默认值，恢复出厂后依然生效）
@@ -8,14 +8,17 @@ sed -i 's/192\.168\.1\.1/192.168.0.1/g' package/base-files/files/bin/config_gene
 
 mkdir -p files/etc/uci-defaults files/etc/openclash/core
 
-# 首启自动扩容脚本（来自仓库 files/）
-cp "$GITHUB_WORKSPACE"/files/etc/uci-defaults/* files/etc/uci-defaults/
+# 完整拷贝覆盖层（含 AdGuard 首启模板和初始化工具，不仅是 uci-defaults）。
+cp -a "$GITHUB_WORKSPACE"/files/. files/
 chmod +x files/etc/uci-defaults/*
 
 # 扩容标记文件在 sysupgrade 后保留，避免重复扩容
 cat >> files/etc/sysupgrade.conf <<'EOF'
 /etc/rootpt-resize
 /etc/rootfs-resize
+/etc/adguardhome-builder.initialized
+/etc/adguardhome-admin.txt
+/etc/adguardhome/
 EOF
 
 # mihomo 内核（OpenClash Meta 内核，预置避免首次启动联网下载）
